@@ -190,6 +190,7 @@ if (typeof document !== "undefined") {
       if (p.sort) state.sort = p.sort; else state.sort = "score";
     }
     syncControls();
+    renderActive();
     addRecent(text);
 
     els.hero.classList.add("compact");
