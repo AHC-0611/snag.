@@ -223,3 +223,43 @@ h3 { margin: 0; font-size: 14.5px; font-weight: 600; line-height: 1.35; display:
   .narrow .seller-chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
   .narrow .seller-chips button { flex-shrink: 0; }
 }
+
+/* Loading animation */
+.loader { display: flex; align-items: center; gap: 28px; padding: 22px 26px; margin-bottom: 22px; border-radius: 22px; background: linear-gradient(135deg, rgba(215,255,58,.28), rgba(255,255,255,.9) 60%); border: 1px solid #dff27a; box-shadow: var(--shadow); animation: rise .35s ease both; transition: opacity .35s, transform .35s; }
+.loader.finish { opacity: 0; transform: translateY(-6px) scale(.99); }
+.radar { position: relative; width: 120px; height: 120px; flex-shrink: 0; border-radius: 50%; background: radial-gradient(circle, #fff 0%, #f7ffd6 70%); overflow: hidden; box-shadow: inset 0 0 0 1px #d6ee6a; }
+.ring { position: absolute; inset: 0; margin: auto; border-radius: 50%; border: 1px dashed rgba(74,102,0,.25); }
+.r1 { width: 33%; height: 33%; } .r2 { width: 66%; height: 66%; } .r3 { width: 96%; height: 96%; border-style: solid; }
+.sweep { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, rgba(215,255,58,0) 0deg, rgba(215,255,58,0) 290deg, rgba(190,235,20,.85) 360deg); animation: spin 2.4s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.blip { position: absolute; left: calc(50% + var(--x)); top: calc(50% + var(--y)); transform: translate(-50%, -50%) scale(.4); width: 18px; height: 18px; border-radius: 6px; display: grid; place-items: center; background: var(--text); color: var(--accent); font-size: 11px; font-weight: 800; opacity: 0; animation: blip 2.4s ease-out infinite; animation-delay: var(--d); }
+@keyframes blip { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.4); } 6% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); } 14% { transform: translate(-50%, -50%) scale(1); } 60% { opacity: .9; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(.8); } }
+.core { position: absolute; inset: 0; margin: auto; width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: var(--accent); color: var(--text); box-shadow: 0 0 0 6px rgba(215,255,58,.35); animation: pulse 1.2s ease-in-out infinite; }
+.core svg { width: 20px; height: 20px; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 12px rgba(215,255,58,0); transform: scale(1.06); } }
+.loader-text { min-width: 0; }
+.loader-title { margin: 0 0 4px; font-size: 18px; font-weight: 600; }
+.loader-title b { font-family: "Space Grotesk"; }
+.loader-store { margin: 0 0 14px; color: var(--muted); font-size: 15px; }
+#scanStore { display: inline-block; color: var(--text); font-weight: 700; }
+#scanStore.swap { animation: swap .32s ease; }
+@keyframes swap { from { opacity: 0; transform: translateY(8px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+.dots i { font-style: normal; animation: dot 1.2s infinite; }
+.dots i:nth-child(2) { animation-delay: .2s; } .dots i:nth-child(3) { animation-delay: .4s; }
+@keyframes dot { 0%, 60%, 100% { opacity: .2; } 30% { opacity: 1; } }
+.steps { display: flex; flex-wrap: wrap; gap: 8px; }
+.step { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: #fff; border: 1px solid var(--line); font-size: 13px; color: var(--muted); transition: all .3s; }
+.step em { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #d4d4cc; transition: all .3s; }
+.step.active { color: var(--text); border-color: #c9ec3c; }
+.step.active em { border-color: #9cc400; border-top-color: transparent; animation: spin .7s linear infinite; }
+.step.done { color: var(--text); background: #f4ffd0; border-color: #c9ec3c; }
+.step.done em { border: 0; background: var(--good); position: relative; }
+.step.done em::after { content: ""; position: absolute; left: 4.5px; top: 2px; width: 4px; height: 7px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+@media (max-width: 600px) {
+  .loader { flex-direction: column; text-align: center; padding: 22px 16px; gap: 16px; }
+  .steps { justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sweep, .blip, .core, .skeleton, .step.active em, #scanStore.swap, .dots i { animation: none !important; }
+  .blip { opacity: .8; transform: translate(-50%, -50%); }
+}

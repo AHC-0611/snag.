@@ -198,7 +198,8 @@ if (typeof document !== "undefined") {
     els.meta.textContent = "Searching every major store live…";
     els.topPick.innerHTML = "";
     els.empty.classList.add("hidden");
-    els.grid.innerHTML = Array.from({ length: 8 }, () => '<div class="skeleton"></div>').join("");
+    els.grid.innerHTML = Array.from({ length: 8 }, (_, n) => `<div class="skeleton" style="animation-delay:${n * 0.08}s"></div>`).join("");
+    startLoader(p.query);
 
     const params = new URLSearchParams({ q: p.query });
     if (state.min != null) params.set("min", state.min);
@@ -207,6 +208,7 @@ if (typeof document !== "undefined") {
       const r = await fetch(`/api/search?${params}`);
       const data = await r.json();
       if (!r.ok) throw data;
+      await stopLoader();
       state.items = scoreItems(data.items || []);
       state.fetchedAt = data.fetchedAt;
       state.sources = data.sources || null;
@@ -214,6 +216,7 @@ if (typeof document !== "undefined") {
       buildBrandChips();
       render();
     } catch (e) {
+      await stopLoader();
       els.grid.innerHTML = "";
       els.meta.textContent = "";
       showEmpty(
@@ -222,6 +225,59 @@ if (typeof document !== "undefined") {
           : `<h3>Search didn't go through</h3><p>${esc((e && e.message) || "Check your connection and try again.")}</p>`
       );
     }
+  }
+
+  /* --- Loading animation --- */
+  const SCAN_STORES = ["Amazon", "Nike", "Nordstrom", "StockX", "Target", "eBay", "GOAT", "Macy's", "Dick's", "Walmart", "Grailed", "Kohl's", "Patagonia", "Foot Locker", "Stadium Goods", "REI"];
+  const SCAN_STEPS = ["Google Shopping", "eBay", "Resale sites"];
+  let loaderTimer = null, loaderStart = 0;
+
+  function startLoader(query) {
+    clearInterval(loaderTimer);
+    loaderStart = Date.now();
+    const tags = Array.from({ length: 6 }, (_, n) => {
+      const a = n * 60 + 20, r = 22 + (n % 3) * 8;
+      return `<span class="blip" style="--x:${Math.cos((a * Math.PI) / 180) * r}%;--y:${Math.sin((a * Math.PI) / 180) * r}%;--d:${(a / 360) * 2.4}s">$</span>`;
+    }).join("");
+    els.topPick.innerHTML = `<div class="loader" id="loader" role="status" aria-live="polite">
+      <div class="radar"><div class="sweep"></div><div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>${tags}
+        <div class="core"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.5" fill="currentColor"/></svg></div>
+      </div>
+      <div class="loader-text">
+        <p class="loader-title">Hunting for the best <b>${esc(query)}</b></p>
+        <p class="loader-store">Checking <span id="scanStore">Amazon</span><span class="dots"><i>.</i><i>.</i><i>.</i></span></p>
+        <div class="steps">${SCAN_STEPS.map((s, n) => `<span class="step" data-step="${n}"><em></em>${s}</span>`).join("")}</div>
+      </div>
+    </div>`;
+    let i = 0;
+    const storeEl = () => document.getElementById("scanStore");
+    loaderTimer = setInterval(() => {
+      i++;
+      const el = storeEl();
+      if (!el) return clearInterval(loaderTimer);
+      el.classList.remove("swap"); void el.offsetWidth; el.classList.add("swap");
+      el.textContent = SCAN_STORES[i % SCAN_STORES.length];
+      const stepN = Math.min(SCAN_STEPS.length, Math.floor((Date.now() - loaderStart) / 900));
+      document.querySelectorAll(".step").forEach((s) => {
+        const n = +s.dataset.step;
+        s.classList.toggle("done", n < stepN);
+        s.classList.toggle("active", n === stepN);
+      });
+    }, 420);
+  }
+
+  async function stopLoader() {
+    clearInterval(loaderTimer);
+    const el = document.getElementById("loader");
+    if (!el) return;
+    // Let it show at least ~0.9s so it doesn't flash, then finish the steps and fade out
+    const wait = Math.max(0, 900 - (Date.now() - loaderStart));
+    if (wait) await new Promise((r) => setTimeout(r, wait));
+    el.querySelectorAll(".step").forEach((s) => { s.classList.remove("active"); s.classList.add("done"); });
+    const t = document.getElementById("scanStore");
+    if (t) t.parentElement.innerHTML = "Done, ranking the deals";
+    el.classList.add("finish");
+    await new Promise((r) => setTimeout(r, 380));
   }
 
   /* --- Filtering + sorting --- */
