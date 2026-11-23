@@ -33,6 +33,7 @@ function trustOf(store, title) {
   if (/ - /.test(s) || /\bebay\b|poshmark|depop|mercari|dhgate|aliexpress|temu|shein|wish|alibaba|etsy|facebook/.test(s)) {
     return { tier: "unverified", label: "Marketplace seller" };
   }
+  if (s === "grailed") return { tier: "unverified", label: "Resale marketplace" };
   if (AUTH_RESALE.some((r) => s === r || s.startsWith(r))) return { tier: "resale", label: "Authenticated resale" };
   const brand = detectBrand(s);
   if (brand && s.replace(/\.com$/, "").replace(/['’]/g, "'").length <= brand.length + 6) return { tier: "official", label: "Official store" };
@@ -182,6 +183,7 @@ if (typeof document !== "undefined") {
       if (!r.ok) throw data;
       state.items = scoreItems(data.items || []);
       state.fetchedAt = data.fetchedAt;
+      state.sources = data.sources || null;
       buildStoreList();
       buildBrandChips();
       render();
@@ -242,21 +244,24 @@ if (typeof document !== "undefined") {
     const time = state.fetchedAt ? new Date(state.fetchedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "";
     const storesN = new Set(list.map((i) => i.store)).size;
     const hiddenUnverified = state.authenticOnly ? state.items.filter((i) => i.trust.tier === "unverified").length : 0;
-    els.meta.textContent = `${list.length} of ${state.items.length} results · ${storesN} stores · live as of ${time}` +
-      (hiddenUnverified ? ` · ${hiddenUnverified} unverified sellers hidden` : "");
+    const srcText = state.sources ? " · " + Object.entries(state.sources).map(([k, v]) => `${k} ${v}`).join(", ") : "";
+    els.meta.textContent = `${list.length} of ${state.items.length} results · ${storesN} stores · live as of ${time}${srcText}`;
 
     if (!list.length) {
       els.topPick.innerHTML = "";
       els.grid.innerHTML = "";
       showEmpty(state.authenticOnly && state.items.some((i) => i.trust.tier === "unverified")
-        ? `<h3>No verified sellers match</h3><p>Try loosening filters, or switch to <b>Show all</b> to include marketplace sellers.</p>`
+        ? `<h3>No verified sellers match</h3><p>${state.items.filter((i) => i.trust.tier === "unverified").length} listings from marketplace sellers are hidden.</p><p><button type="button" class="btn solid" id="showAllBtn">Show all sellers</button></p>`
         : `<h3>No matches with these filters</h3><p>Try loosening the price, rating or brand filters.</p>`);
       return;
     }
 
+    const notice = hiddenUnverified
+      ? `<div class="hidden-notice"><span><b>${hiddenUnverified}</b> more listings from eBay, Grailed and other marketplace sellers are hidden by Authentic only.</span><button type="button" id="showAllBtn">Show them</button></div>`
+      : "";
     // Top pick = best Snag Score among what's currently filtered
     const pick = [...list].sort((a, b) => b.score - a.score)[0];
-    els.topPick.innerHTML = topPickHTML(pick);
+    els.topPick.innerHTML = notice + topPickHTML(pick);
     els.grid.innerHTML = list.filter((i) => i !== pick).map(cardHTML).join("");
   }
 
@@ -286,7 +291,7 @@ if (typeof document !== "undefined") {
       </div>
       <div class="body">
         <div class="store">${esc(it.store)}</div>
-        ${trustBadge(it)}
+        <div class="badges">${trustBadge(it)}${it.condition ? `<span class="cond">${esc(it.condition)}</span>` : ""}</div>
         <h3 title="${esc(it.title)}">${esc(it.title)}</h3>
         ${it.rating != null ? `<div class="rating"><span class="stars">${stars(it.rating)}</span>${it.rating.toFixed(1)}<span class="count">(${(it.reviews || 0).toLocaleString()})</span></div>` : `<div class="rating"><span class="count">No reviews yet</span></div>`}
         <div class="price"><span class="now">${money(it.price)}</span>${it.oldPrice ? `<s>${money(it.oldPrice)}</s>` : ""}</div>
@@ -315,7 +320,7 @@ if (typeof document !== "undefined") {
         <ul class="why">${why.map((w) => `<li>${esc(w)}</li>`).join("")}</ul>
         <div class="actions">
           <a class="btn solid" href="${esc(safeUrl(it.link))}" target="_blank" rel="noopener noreferrer">Get this deal ↗</a>
-          <a class="btn outline" href="${esc(safeUrl(it.reviewsLink))}" target="_blank" rel="noopener noreferrer">Read reviews</a>
+          ${it.reviews ? `<a class="btn outline" href="${esc(safeUrl(it.reviewsLink))}" target="_blank" rel="noopener noreferrer">Read reviews</a>` : ""}
           <button class="btn outline heart-inline" data-save="${esc(it.id)}|${esc(it.store)}">${isSaved(it) ? "♥ Saved" : "♡ Save"}</button>
         </div>
       </div>
@@ -482,6 +487,7 @@ if (typeof document !== "undefined") {
   });
 
   document.addEventListener("click", (e) => {
+    if (e.target.id === "showAllBtn") { state.authenticOnly = false; syncControls(); render(); return; }
     const k = e.target.closest("[data-save]")?.dataset.save;
     if (k) { e.preventDefault(); toggleSave(k); }
   });

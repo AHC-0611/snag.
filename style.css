@@ -205,3 +205,7 @@ h3 { margin: 0; font-size: 14.5px; font-weight: 600; line-height: 1.35; display:
 .trust-official, .trust-authorized { background: #e6f7ed; color: #0f7a40; }
 .trust-resale { background: #e8f0ff; color: #2456c7; }
 .trust-unverified { background: #fff3dc; color: #9a6400; }
+.badges { display: flex; flex-wrap: wrap; gap: 4px; }
+.cond { display: inline-flex; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: var(--card-2); color: var(--muted); }
+.hidden-notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 16px; margin-bottom: 16px; border-radius: 14px; background: #fff8e6; border: 1px solid #f3dca0; font-size: 14px; color: #6b4a00; }
+.hidden-notice button { background: var(--text); color: #fff; border: 0; border-radius: 999px; padding: 8px 16px; font-weight: 600; font-size: 13px; }

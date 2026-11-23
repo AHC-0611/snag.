@@ -18,7 +18,7 @@ Type what you want ("find me the best quarter zip under $50"). Snag searches Goo
    - Value: your key
 4. **Deployments → ⋯ → Redeploy** so the key takes effect.
 
-Searches are cached for 10 minutes at Vercel's edge, so repeat searches don't use up credits.
+Each search checks 3 sources at once (Google Shopping, eBay, and resale sites: StockX, GOAT, Stadium Goods, Flight Club, Grailed), so it uses up to 3 SerpAPI credits. Searches are cached for 10 minutes at Vercel's edge, so repeating a search doesn't use more credits.
 
 ## Tips
 - Share a search as a link: `https://your-site.vercel.app/?q=nike hoodie under 60`
