@@ -30,6 +30,20 @@
       <button type="submit" class="primary">Search</button>
     </form>
 
+    <div class="narrow" id="narrow">
+      <div class="narrow-row">
+        <span class="narrow-label">Authenticity</span>
+        <div class="seg seg-2 auth-seg" data-auth>
+          <button type="button" data-v="1" class="on">✓ Authentic only</button>
+          <button type="button" data-v="0">Show all sellers</button>
+        </div>
+      </div>
+      <div class="narrow-row">
+        <span class="narrow-label">Sellers</span>
+        <div class="chips seller-chips" data-sellers></div>
+      </div>
+    </div>
+
     <div class="examples" id="examples">
       <button type="button">Best quarter zip under $50</button>
       <button type="button">Nike tech fleece hoodie under 90</button>
@@ -50,11 +64,16 @@
 
       <div class="group">
         <label class="group-title">Authenticity</label>
-        <div class="seg seg-2" id="authSeg">
+        <div class="seg seg-2" id="authSeg" data-auth>
           <button type="button" data-v="1" class="on">✓ Authentic only</button>
           <button type="button" data-v="0">Show all</button>
         </div>
         <p class="hint">Authentic only shows official brand stores, authorized retailers and resale sites that authenticate items. Listings that look like counterfeits are always hidden.</p>
+      </div>
+
+      <div class="group">
+        <label class="group-title">Sellers</label>
+        <div class="chips seller-chips" data-sellers></div>
       </div>
 
       <div class="group">

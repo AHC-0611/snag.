@@ -41,6 +41,31 @@ function trustOf(store, title) {
   return { tier: "unverified", label: "Unverified seller" };
 }
 
+/* ---------- Main sellers (pick before or after searching) ---------- */
+const SELLERS = [
+  { id: "official", label: "Brand stores", test: (i) => i.trust && i.trust.tier === "official" },
+  { id: "amazon", label: "Amazon", re: /^amazon\.com/ },
+  { id: "walmart", label: "Walmart", re: /^walmart/ },
+  { id: "target", label: "Target", re: /^target/ },
+  { id: "nordstrom", label: "Nordstrom", re: /^nordstrom/ },
+  { id: "macys", label: "Macy's", re: /^macy/ },
+  { id: "kohls", label: "Kohl's", re: /^kohl/ },
+  { id: "dicks", label: "Dick's", re: /^dick'?s/ },
+  { id: "footlocker", label: "Foot Locker", re: /foot locker|champs sports/ },
+  { id: "jcpenney", label: "JCPenney", re: /^jcpenney/ },
+  { id: "rei", label: "REI", re: /^rei(\b|$)/ },
+  { id: "stockx", label: "StockX", re: /^stockx/ },
+  { id: "goat", label: "GOAT", re: /^goat/ },
+  { id: "stadium", label: "Stadium Goods", re: /^stadium goods/ },
+  { id: "ebay", label: "eBay", re: /^ebay/, marketplace: true },
+  { id: "grailed", label: "Grailed", re: /^grailed/, marketplace: true },
+];
+function matchesSeller(item, ids) {
+  if (!ids.size) return true;
+  const s = String(item.store || "").toLowerCase().replace(/[’]/g, "'");
+  return SELLERS.some((o) => ids.has(o.id) && (o.test ? o.test(item) : o.re.test(s)));
+}
+
 const state = {
   query: "",
   items: [],
@@ -51,6 +76,7 @@ const state = {
   ratedOnly: false,
   freeShip: false,
   brands: new Set(),
+  sellers: new Set(),
   stores: new Set(),
   sort: "score",
   authenticOnly: true,
@@ -213,6 +239,7 @@ if (typeof document !== "undefined") {
       if (state.freeShip && !/free/i.test(i.delivery || "")) return false;
       if (state.brands.size && !state.brands.has(i.brand)) return false;
       if (state.stores.size && !state.stores.has(i.store)) return false;
+      if (!matchesSeller(i, state.sellers)) return false;
       return true;
     });
     const by = {
@@ -243,7 +270,7 @@ if (typeof document !== "undefined") {
     els.title.textContent = `“${state.query}”`;
     const time = state.fetchedAt ? new Date(state.fetchedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "";
     const storesN = new Set(list.map((i) => i.store)).size;
-    const hiddenUnverified = state.authenticOnly ? state.items.filter((i) => i.trust.tier === "unverified").length : 0;
+    const hiddenUnverified = state.authenticOnly ? state.items.filter((i) => i.trust.tier === "unverified" && matchesSeller(i, state.sellers)).length : 0;
     const srcText = state.sources ? " · " + Object.entries(state.sources).map(([k, v]) => `${k} ${v}`).join(", ") : "";
     els.meta.textContent = `${list.length} of ${state.items.length} results · ${storesN} stores · live as of ${time}${srcText}`;
 
@@ -252,7 +279,9 @@ if (typeof document !== "undefined") {
       els.grid.innerHTML = "";
       showEmpty(state.authenticOnly && state.items.some((i) => i.trust.tier === "unverified")
         ? `<h3>No verified sellers match</h3><p>${state.items.filter((i) => i.trust.tier === "unverified").length} listings from marketplace sellers are hidden.</p><p><button type="button" class="btn solid" id="showAllBtn">Show all sellers</button></p>`
-        : `<h3>No matches with these filters</h3><p>Try loosening the price, rating or brand filters.</p>`);
+        : state.sellers.size
+          ? `<h3>None of your picked sellers have this</h3><p>Try adding more sellers, or pick <b>All stores</b>.</p>`
+          : `<h3>No matches with these filters</h3><p>Try loosening the price, rating or brand filters.</p>`);
       return;
     }
 
@@ -359,6 +388,7 @@ if (typeof document !== "undefined") {
     if (state.saleOnly) chips.push(["sale", "On sale"]);
     if (state.ratedOnly) chips.push(["rated", "Has reviews"]);
     if (state.freeShip) chips.push(["ship", "Free delivery"]);
+    state.sellers.forEach((id) => chips.push(["seller:" + id, SELLERS.find((o) => o.id === id).label]));
     state.brands.forEach((b) => chips.push(["brand:" + b, b]));
     state.stores.forEach((s) => chips.push(["store:" + s, s]));
     els.active.innerHTML = state.showingSaved ? "" : chips.map(([k, l]) => `<button type="button" data-clear="${esc(k)}">${esc(l)} ✕</button>`).join("");
@@ -371,11 +401,20 @@ if (typeof document !== "undefined") {
     $("#saleOnly").checked = state.saleOnly;
     $("#ratedOnly").checked = state.ratedOnly;
     $("#freeShip").checked = state.freeShip;
-    document.querySelectorAll("#authSeg button").forEach((b) => b.classList.toggle("on", (b.dataset.v === "1") === state.authenticOnly));
+    document.querySelectorAll("[data-auth] button").forEach((b) => b.classList.toggle("on", (b.dataset.v === "1") === state.authenticOnly));
     store.set("snag_auth", state.authenticOnly);
+    store.set("snag_sellers", [...state.sellers]);
+    renderSellerChips();
     document.querySelectorAll("#ratingSeg button").forEach((b) => b.classList.toggle("on", +b.dataset.v === state.minRating));
     buildBrandChips();
     buildStoreList();
+  }
+
+  function renderSellerChips() {
+    const html =
+      `<button type="button" data-seller="all" class="${state.sellers.size ? "" : "on"}">All stores</button>` +
+      SELLERS.map((o) => `<button type="button" data-seller="${o.id}" class="${state.sellers.has(o.id) ? "on" : ""}">${esc(o.label)}</button>`).join("");
+    document.querySelectorAll("[data-sellers]").forEach((el) => (el.innerHTML = html));
   }
 
   /* --- Recent + saved --- */
@@ -431,12 +470,26 @@ if (typeof document !== "undefined") {
     state.minRating = +e.target.dataset.v;
     syncControls(); render();
   });
-  $("#authSeg").addEventListener("click", (e) => {
+  document.querySelectorAll("[data-auth]").forEach((seg) => seg.addEventListener("click", (e) => {
     const v = e.target.closest("button")?.dataset.v;
     if (v == null) return;
     state.authenticOnly = v === "1";
-    syncControls(); render();
-  });
+    syncControls();
+    if (state.query || state.showingSaved) render();
+  }));
+  document.querySelectorAll("[data-sellers]").forEach((el) => el.addEventListener("click", (e) => {
+    const id = e.target.closest("button")?.dataset.seller;
+    if (!id) return;
+    if (id === "all") state.sellers.clear();
+    else {
+      state.sellers.has(id) ? state.sellers.delete(id) : state.sellers.add(id);
+      // Picking only marketplace sellers (eBay/Grailed) needs Show all, or nothing would appear
+      const picks = SELLERS.filter((o) => state.sellers.has(o.id));
+      if (picks.length && picks.every((o) => o.marketplace)) state.authenticOnly = false;
+    }
+    syncControls();
+    if (state.query) render();
+  }));
   $("#saleOnly").addEventListener("change", (e) => { state.saleOnly = e.target.checked; render(); });
   $("#ratedOnly").addEventListener("change", (e) => { state.ratedOnly = e.target.checked; render(); });
   $("#freeShip").addEventListener("change", (e) => { state.freeShip = e.target.checked; render(); });
@@ -474,10 +527,12 @@ if (typeof document !== "undefined") {
     else if (k === "rated") state.ratedOnly = false;
     else if (k === "ship") state.freeShip = false;
     else if (k.startsWith("brand:")) state.brands.delete(k.slice(6));
+    else if (k.startsWith("seller:")) state.sellers.delete(k.slice(7));
     else if (k.startsWith("store:")) state.stores.delete(k.slice(6));
     syncControls(); render();
   });
   $("#resetFilters").addEventListener("click", () => {
+    state.sellers.clear();
     Object.assign(state, { authenticOnly: true, minRating: 0, saleOnly: false, ratedOnly: false, freeShip: false, sort: "score" });
     state.brands.clear(); state.stores.clear();
     const hadPrice = state.min != null || state.max != null;
@@ -510,6 +565,7 @@ if (typeof document !== "undefined") {
 
   // Init
   state.authenticOnly = store.get("snag_auth", true) !== false;
+  store.get("snag_sellers", []).forEach((id) => SELLERS.some((o) => o.id === id) && state.sellers.add(id));
   syncControls();
   els.savedCount.textContent = saved.length;
   renderRecent();
