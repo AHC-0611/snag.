@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Snag — Find the best clothing deals</title>
+  <meta name="description" content="Tell Snag what you want. It searches every major store live, checks ratings and reviews, and ranks the best deals." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%23d7ff3a'/><text x='50%' y='56%' text-anchor='middle' dominant-baseline='middle' font-family='Arial' font-weight='900' font-size='38' fill='%230a0a0c'>S</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header class="nav">
+    <a class="logo" href="/"><span class="logo-mark">S</span>Snag</a>
+    <nav class="nav-links">
+      <button class="ghost" id="savedBtn">♡ Saved <span id="savedCount" class="pill-count">0</span></button>
+    </nav>
+  </header>
+
+  <section class="hero" id="hero">
+    <div class="glow"></div>
+    <p class="eyebrow">Live prices · Real reviews · Every major store</p>
+    <h1>Tell us what you want.<br /><span class="accent">We'll find the steal.</span></h1>
+
+    <form class="search" id="searchForm" autocomplete="off">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="text" placeholder="Find me the best quarter zip under $50" aria-label="What are you looking for?" />
+      <button type="submit" class="primary">Search</button>
+    </form>
+
+    <div class="examples" id="examples">
+      <button type="button">Best quarter zip under $50</button>
+      <button type="button">Nike tech fleece hoodie under 90</button>
+      <button type="button">Top rated men's jeans between 30 and 70</button>
+      <button type="button">Cheapest Patagonia fleece</button>
+      <button type="button">Women's puffer jacket under $120</button>
+    </div>
+    <div class="recent" id="recent"></div>
+  </section>
+
+  <main class="layout hidden" id="results">
+    <aside class="filters" id="filters">
+      <div class="filters-head">
+        <h2>Filters</h2>
+        <button class="link" id="resetFilters" type="button">Reset</button>
+        <button class="close-drawer" id="closeFilters" type="button" aria-label="Close filters">✕</button>
+      </div>
+
+      <div class="group">
+        <label class="group-title">Price</label>
+        <div class="price-row">
+          <div class="money"><span>$</span><input id="minPrice" type="number" min="0" placeholder="Min" /></div>
+          <span class="dash">–</span>
+          <div class="money"><span>$</span><input id="maxPrice" type="number" min="0" placeholder="Max" /></div>
+        </div>
+        <p class="hint">Changing price runs a fresh live search.</p>
+      </div>
+
+      <div class="group">
+        <label class="group-title">Minimum rating</label>
+        <div class="seg" id="ratingSeg">
+          <button type="button" data-v="0" class="on">Any</button>
+          <button type="button" data-v="3.5">3.5+</button>
+          <button type="button" data-v="4">4.0+</button>
+          <button type="button" data-v="4.5">4.5+</button>
+        </div>
+      </div>
+
+      <div class="group toggles">
+        <label class="switch"><input type="checkbox" id="saleOnly" /><span></span>On sale only</label>
+        <label class="switch"><input type="checkbox" id="ratedOnly" /><span></span>Has reviews</label>
+        <label class="switch"><input type="checkbox" id="freeShip" /><span></span>Free delivery</label>
+      </div>
+
+      <div class="group">
+        <label class="group-title">Brands <span class="muted" id="brandNote"></span></label>
+        <input class="mini-search" id="brandSearch" placeholder="Search brands…" />
+        <div class="chips" id="brandChips"></div>
+      </div>
+
+      <div class="group">
+        <label class="group-title">Stores</label>
+        <div class="checks" id="storeList"></div>
+      </div>
+    </aside>
+
+    <section class="content">
+      <div class="toolbar">
+        <div>
+          <h2 id="resultTitle">Results</h2>
+          <p class="meta" id="resultMeta"></p>
+        </div>
+        <div class="toolbar-right">
+          <button class="ghost filter-toggle" id="openFilters" type="button">⚙ Filters</button>
+          <select id="sort" aria-label="Sort">
+            <option value="score">Best deal (Snag Score)</option>
+            <option value="price_asc">Lowest price</option>
+            <option value="price_desc">Highest price</option>
+            <option value="rating">Highest rated</option>
+            <option value="reviews">Most reviewed</option>
+            <option value="discount">Biggest discount</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="active-chips" id="activeChips"></div>
+      <div id="topPick"></div>
+      <div class="grid" id="grid"></div>
+      <div id="empty" class="empty hidden"></div>
+    </section>
+  </main>
+
+  <div class="drawer-backdrop hidden" id="backdrop"></div>
+
+  <footer class="foot">
+    <p>Prices, ratings and stores come live from Google Shopping and can change. Always confirm the final price at checkout.</p>
+    <p class="muted">Snag Score = rating × review confidence + price vs. the other results + discount.</p>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "snag",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Snag — live clothing deal & review finder",
+  "engines": {
+    "node": ">=18"
+  }
+}
