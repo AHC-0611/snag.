@@ -260,6 +260,8 @@ h3 { margin: 0; font-size: 14.5px; font-weight: 600; line-height: 1.35; display:
   .steps { justify-content: center; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sweep, .blip, .core, .skeleton, .step.active em, #scanStore.swap, .dots i { animation: none !important; }
-  .blip { opacity: .8; transform: translate(-50%, -50%); }
+  /* Keep the loader moving (it's the only sign a search is running), just calmer */
+  .sweep { animation-duration: 3.6s; }
+  .blip { animation-duration: 3.6s; }
 }
+
