@@ -200,6 +200,7 @@ if (typeof document !== "undefined") {
     els.empty.classList.add("hidden");
     els.grid.innerHTML = Array.from({ length: 8 }, (_, n) => `<div class="skeleton" style="animation-delay:${n * 0.08}s"></div>`).join("");
     startLoader(p.query);
+    window.scrollTo({ top: 0, behavior: "smooth" });
 
     const params = new URLSearchParams({ q: p.query });
     if (state.min != null) params.set("min", state.min);
@@ -257,7 +258,7 @@ if (typeof document !== "undefined") {
       if (!el) return clearInterval(loaderTimer);
       el.classList.remove("swap"); void el.offsetWidth; el.classList.add("swap");
       el.textContent = SCAN_STORES[i % SCAN_STORES.length];
-      const stepN = Math.min(SCAN_STEPS.length, Math.floor((Date.now() - loaderStart) / 900));
+      const stepN = Math.min(SCAN_STEPS.length, Math.floor((Date.now() - loaderStart) / 600));
       document.querySelectorAll(".step").forEach((s) => {
         const n = +s.dataset.step;
         s.classList.toggle("done", n < stepN);
@@ -271,7 +272,7 @@ if (typeof document !== "undefined") {
     const el = document.getElementById("loader");
     if (!el) return;
     // Let it show at least ~0.9s so it doesn't flash, then finish the steps and fade out
-    const wait = Math.max(0, 900 - (Date.now() - loaderStart));
+    const wait = Math.max(0, 1800 - (Date.now() - loaderStart));
     if (wait) await new Promise((r) => setTimeout(r, wait));
     el.querySelectorAll(".step").forEach((s) => { s.classList.remove("active"); s.classList.add("done"); });
     const t = document.getElementById("scanStore");
