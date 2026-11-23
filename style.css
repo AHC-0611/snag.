@@ -265,3 +265,13 @@ h3 { margin: 0; font-size: 14.5px; font-weight: 600; line-height: 1.35; display:
   .blip { animation-duration: 3.6s; }
 }
 
+
+/* Hero entrance after the opening screen */
+body.ready .hero .eyebrow, body.ready .hero h1, body.ready .hero .search, body.ready .hero .narrow, body.ready .hero .examples { animation: heroUp .6s cubic-bezier(.2,1,.3,1) both; }
+body.ready .hero h1 { animation-delay: .06s; }
+body.ready .hero .search { animation-delay: .14s; }
+body.ready .hero .narrow { animation-delay: .22s; }
+body.ready .hero .examples { animation-delay: .3s; }
+body.ready .accent { animation: hl .7s cubic-bezier(.6,0,.2,1) .45s both; background-size: 100% 100%; background-repeat: no-repeat; }
+@keyframes heroUp { from { opacity: 0; transform: translateY(18px); } }
+@keyframes hl { from { background-size: 0% 100%; } }

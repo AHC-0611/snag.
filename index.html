@@ -9,9 +9,67 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/style.css?v=1795399723" />
+  <link rel="stylesheet" href="/style.css?v=1795400001" />
+
+  <style>
+    /* Opening screen (inline so it shows instantly) */
+    #splash { position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center; background: #f6f6f3; font-family: "Inter", system-ui, sans-serif; animation: spOut .55s cubic-bezier(.7,0,.3,1) 2.25s forwards; cursor: pointer; }
+    #splash::before { content: ""; position: absolute; width: 520px; height: 520px; border-radius: 50%; background: radial-gradient(closest-side, rgba(215,255,58,.55), transparent); animation: spGlow 2.2s ease-in-out both; }
+    .sp-wrap { position: relative; display: grid; justify-items: center; gap: 26px; }
+    .sp-radar { position: relative; width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, #fff 0%, #f7ffd6 72%); box-shadow: inset 0 0 0 1.5px #d2ec5a, 0 30px 80px -30px rgba(120,150,0,.45); overflow: hidden; animation: spIn .5s cubic-bezier(.2,1.4,.4,1) both; }
+    .sp-ring { position: absolute; inset: 0; margin: auto; border-radius: 50%; border: 1.5px dashed rgba(74,102,0,.22); animation: spRing .6s ease-out both; }
+    .sp-ring.a { width: 36%; height: 36%; animation-delay: .1s; } .sp-ring.b { width: 66%; height: 66%; animation-delay: .17s; } .sp-ring.c { width: 94%; height: 94%; animation-delay: .24s; border-style: solid; border-color: rgba(74,102,0,.15); }
+    .sp-cross { position: absolute; inset: 0; background: linear-gradient(transparent calc(50% - .5px), rgba(74,102,0,.12) calc(50% - .5px), rgba(74,102,0,.12) calc(50% + .5px), transparent calc(50% + .5px)), linear-gradient(90deg, transparent calc(50% - .5px), rgba(74,102,0,.12) calc(50% - .5px), rgba(74,102,0,.12) calc(50% + .5px), transparent calc(50% + .5px)); }
+    .sp-sweep { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, rgba(215,255,58,0) 0deg, rgba(215,255,58,0) 270deg, rgba(200,245,30,.55) 340deg, rgba(150,200,0,.95) 360deg); opacity: 0; animation: spSweep 1.2s linear .35s 1 both, spFade .3s ease 1.45s forwards; }
+    .sp-blip { position: absolute; left: calc(50% + var(--x)); top: calc(50% + var(--y)); width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 7px; display: grid; place-items: center; background: #121214; color: #d7ff3a; font: 800 12px/1 "Inter", system-ui, sans-serif; font-style: normal; opacity: 0; transform: scale(.3); animation: spBlip .35s cubic-bezier(.2,1.6,.4,1) var(--d) forwards, spSnag .38s cubic-bezier(.6,-.35,.8,.4) var(--s) forwards; }
+    .sp-logo { position: absolute; inset: 0; margin: auto; width: 72px; height: 72px; border-radius: 22px; display: grid; place-items: center; background: #d7ff3a; color: #121214; font: 800 44px/1 "Space Grotesk", "Inter", system-ui, sans-serif; box-shadow: 0 0 0 8px rgba(215,255,58,.35), 0 12px 30px -8px rgba(100,140,0,.5); animation: spLogo .6s cubic-bezier(.2,1.8,.4,1) .08s both, spGulp .5s cubic-bezier(.3,1.8,.5,1) 1.98s both; }
+    .sp-word { display: flex; gap: 2px; font: 700 40px/1 "Space Grotesk", "Inter", system-ui, sans-serif; letter-spacing: -1.5px; color: #121214; }
+    .sp-word span { display: inline-block; opacity: 0; transform: translateY(14px); animation: spUp .45s cubic-bezier(.2,1.4,.4,1) forwards; }
+    .sp-word span:nth-child(1) { animation-delay: .5s; } .sp-word span:nth-child(2) { animation-delay: .56s; } .sp-word span:nth-child(3) { animation-delay: .62s; } .sp-word span:nth-child(4) { animation-delay: .68s; }
+    .sp-sub { margin-top: -14px; font-size: 14px; color: #6e6e78; opacity: 0; animation: spUp .4s ease .8s forwards; }
+    .sp-sub b { color: #121214; }
+    .sp-bar { width: 180px; height: 5px; border-radius: 99px; background: #e6e6df; overflow: hidden; margin-top: -10px; opacity: 0; animation: spUp .3s ease .8s forwards; }
+    .sp-bar i { display: block; height: 100%; width: 100%; border-radius: inherit; background: linear-gradient(90deg, #b9e81c, #d7ff3a); transform-origin: left; transform: scaleX(0); animation: spFill 1.25s cubic-bezier(.6,0,.2,1) .85s forwards; }
+    @keyframes spIn { from { transform: scale(.6) rotate(-20deg); opacity: 0; } }
+    @keyframes spRing { from { transform: scale(.2); opacity: 0; } }
+    @keyframes spSweep { 0% { opacity: 1; transform: rotate(0); } 100% { opacity: 1; transform: rotate(360deg); } }
+    @keyframes spFade { to { opacity: 0; } }
+    @keyframes spBlip { to { opacity: 1; transform: scale(1); } }
+    @keyframes spSnag { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; left: 50%; top: 50%; transform: scale(.2) rotate(180deg); } }
+    @keyframes spLogo { from { transform: scale(0) rotate(-90deg); } }
+    @keyframes spGulp { 0% { transform: scale(1); } 35% { transform: scale(1.28) rotate(-6deg); box-shadow: 0 0 0 22px rgba(215,255,58,.15), 0 12px 30px -8px rgba(100,140,0,.5); } 100% { transform: scale(1); } }
+    @keyframes spUp { to { opacity: 1; transform: none; } }
+    @keyframes spFill { to { transform: scaleX(1); } }
+    @keyframes spGlow { 0% { transform: scale(.4); opacity: 0; } 60% { opacity: 1; } 85% { transform: scale(1.15); } 100% { transform: scale(1); } }
+    @keyframes spOut { 0% { opacity: 1; } 100% { opacity: 0; transform: scale(1.06); visibility: hidden; pointer-events: none; } }
+    #splash.skip { animation: spOut .3s ease forwards; }
+    @media (prefers-reduced-motion: reduce) { #splash { animation-delay: 1.4s; } }
+  </style>
 </head>
 <body>
+  <div id="splash" aria-hidden="true">
+    <div class="sp-wrap">
+      <div class="sp-radar">
+        <div class="sp-cross"></div><div class="sp-ring a"></div><div class="sp-ring b"></div><div class="sp-ring c"></div>
+        <div class="sp-sweep"></div>
+        <i class="sp-blip" style="--x:14.8%;--y:-31.7%;--d:0.43s;--s:1.50s">$</i><i class="sp-blip" style="--x:25.6%;--y:-4.5%;--d:0.62s;--s:1.53s">$</i><i class="sp-blip" style="--x:23.8%;--y:28.3%;--d:0.82s;--s:1.56s">$</i><i class="sp-blip" style="--x:-9.9%;--y:27.3%;--d:1.02s;--s:1.59s">$</i><i class="sp-blip" style="--x:-35.7%;--y:13.0%;--d:1.18s;--s:1.62s">$</i><i class="sp-blip" style="--x:-19.7%;--y:-13.8%;--d:1.37s;--s:1.65s">$</i><i class="sp-blip" style="--x:-11.3%;--y:-31.0%;--d:1.48s;--s:1.68s">$</i>
+        <div class="sp-logo">S</div>
+      </div>
+      <div class="sp-word"><span>S</span><span>n</span><span>a</span><span>g</span></div>
+      <div class="sp-sub" id="spSub">Scanning every store…</div>
+      <div class="sp-bar"><i></i></div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var s = document.getElementById("splash");
+      var done = function () { if (!s) return; document.body.classList.add("ready"); s.remove(); s = null; };
+      setTimeout(function () { var t = document.getElementById("spSub"); if (t) t.innerHTML = "<b>Deals found.</b> Let\u2019s go."; }, 1950);
+      s.addEventListener("animationend", function (e) { if (e.target === s) done(); });
+      s.addEventListener("click", function () { s && s.classList.add("skip"); });
+      setTimeout(done, 3400);
+    })();
+  </script>
   <header class="nav">
     <a class="logo" href="/"><span class="logo-mark">S</span>Snag</a>
     <nav class="nav-links">
@@ -147,6 +205,6 @@
     <p class="muted">Snag Score = rating × review confidence + price vs. the other results + discount.</p>
   </footer>
 
-  <script src="/app.js?v=1795399723"></script>
+  <script src="/app.js?v=1795400001"></script>
 </body>
 </html>
