@@ -197,3 +197,11 @@ h3 { margin: 0; font-size: 14.5px; font-weight: 600; line-height: 1.35; display:
   .body { padding: 10px; }
   .price .now { font-size: 18px; }
 }
+
+/* Authenticity */
+.seg-2 { grid-template-columns: 1fr 1fr; }
+.seg-2 button { padding: 9px 0; font-weight: 600; }
+.trust { display: inline-flex; align-items: center; gap: 4px; width: fit-content; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+.trust-official, .trust-authorized { background: #e6f7ed; color: #0f7a40; }
+.trust-resale { background: #e8f0ff; color: #2456c7; }
+.trust-unverified { background: #fff3dc; color: #9a6400; }

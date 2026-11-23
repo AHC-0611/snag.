@@ -9,6 +9,37 @@ const BRANDS = [
   "Essentials", "Stussy", "Converse", "Vans", "Quiksilver", "Billabong", "Free People", "Madewell", "Aerie", "Athleta", "Alo",
 ];
 
+/* ---------- Seller trust ---------- */
+// Authorized / major retailers that buy stock straight from the brands
+const AUTHORIZED = [
+  "amazon.com", "nordstrom", "nordstrom rack", "macy's", "kohl's", "dick's sporting goods", "jcpenney", "target", "zappos", "rei",
+  "foot locker", "champs sports", "finish line", "jd sports", "academy sports", "scheels", "bloomingdale's", "saks fifth avenue", "saks off 5th",
+  "neiman marcus", "dillard's", "belk", "backcountry", "moosejaw", "evo", "urban outfitters", "pacsun", "zumiez", "ssense", "end.", "farfetch",
+  "mr porter", "mytheresa", "revolve", "shopbop", "lids", "fanatics", "uniqlo", "gap", "old navy", "banana republic", "h&m", "zara", "j.crew",
+  "abercrombie & fitch", "hollister", "american eagle", "aerie", "express", "l.l.bean", "eddie bauer", "lululemon", "athleta", "vuori", "alo yoga",
+  "sierra", "tj maxx", "marshalls", "burlington", "ross", "dsw", "famous footwear", "hibbett", "eastern mountain sports", "sun & ski", "cabela's",
+  "bass pro shops", "walmart", "costco", "sam's club", "kohls", "macys", "levi's", "carhartt", "columbia sportswear", "the north face",
+  "patagonia", "under armour", "adidas", "nike", "puma", "new balance", "reebok", "champion", "ralph lauren", "tommy hilfiger", "calvin klein",
+];
+// Resale sites that inspect items before shipping
+const AUTH_RESALE = ["stockx", "goat", "the realreal", "flight club", "stadium goods", "vestiaire collective", "rebag", "fashionphile"];
+// Obvious counterfeit wording: always hidden, in every mode
+const FAKE_WORDS = /\b(replicas?|reps|1:1|fake|knock-?offs?|mirror quality|aaa\+? quality|unbranded copy)\b/i;
+
+function trustOf(store, title) {
+  const s = String(store || "").toLowerCase().trim();
+  if (FAKE_WORDS.test(title || "")) return { tier: "fake", label: "Likely counterfeit" };
+  // Marketplace third-party sellers show up like "Walmart - SellerName" or "Amazon.com - Seller"
+  if (/ - /.test(s) || /\bebay\b|poshmark|depop|mercari|dhgate|aliexpress|temu|shein|wish|alibaba|etsy|facebook/.test(s)) {
+    return { tier: "unverified", label: "Marketplace seller" };
+  }
+  if (AUTH_RESALE.some((r) => s === r || s.startsWith(r))) return { tier: "resale", label: "Authenticated resale" };
+  const brand = detectBrand(s);
+  if (brand && s.replace(/\.com$/, "").replace(/['’]/g, "'").length <= brand.length + 6) return { tier: "official", label: "Official store" };
+  if (AUTHORIZED.some((r) => s === r || s === r + ".com")) return { tier: "authorized", label: "Authorized retailer" };
+  return { tier: "unverified", label: "Unverified seller" };
+}
+
 const state = {
   query: "",
   items: [],
@@ -21,6 +52,7 @@ const state = {
   brands: new Set(),
   stores: new Set(),
   sort: "score",
+  authenticOnly: true,
   brandFilterText: "",
   showingSaved: false,
 };
@@ -82,7 +114,7 @@ function scoreItems(items) {
     const value = clamp(1 - it.price / (2 * med), 0, 1);
     const disc = clamp(discountPct / 60, 0, 1);
     const score = Math.round(100 * (0.55 * quality + 0.3 * value + 0.15 * disc));
-    return { ...it, discountPct, score, medianPrice: med, brand: detectBrand(it.title) || detectBrand(it.store) };
+    return { ...it, discountPct, score, medianPrice: med, brand: detectBrand(it.title) || detectBrand(it.store), trust: trustOf(it.store, it.title) };
   });
 }
 
@@ -169,6 +201,8 @@ if (typeof document !== "undefined") {
     let list = state.showingSaved ? saved.slice() : state.items.slice();
     if (state.showingSaved) return list;
     list = list.filter((i) => {
+      if (i.trust.tier === "fake") return false;
+      if (state.authenticOnly && i.trust.tier === "unverified") return false;
       if (state.min != null && i.price < state.min) return false;
       if (state.max != null && i.price > state.max) return false;
       if (state.minRating && (i.rating == null || i.rating < state.minRating)) return false;
@@ -207,12 +241,16 @@ if (typeof document !== "undefined") {
     els.title.textContent = `“${state.query}”`;
     const time = state.fetchedAt ? new Date(state.fetchedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "";
     const storesN = new Set(list.map((i) => i.store)).size;
-    els.meta.textContent = `${list.length} of ${state.items.length} results · ${storesN} stores · live as of ${time}`;
+    const hiddenUnverified = state.authenticOnly ? state.items.filter((i) => i.trust.tier === "unverified").length : 0;
+    els.meta.textContent = `${list.length} of ${state.items.length} results · ${storesN} stores · live as of ${time}` +
+      (hiddenUnverified ? ` · ${hiddenUnverified} unverified sellers hidden` : "");
 
     if (!list.length) {
       els.topPick.innerHTML = "";
       els.grid.innerHTML = "";
-      showEmpty(`<h3>No matches with these filters</h3><p>Try loosening the price, rating or brand filters.</p>`);
+      showEmpty(state.authenticOnly && state.items.some((i) => i.trust.tier === "unverified")
+        ? `<h3>No verified sellers match</h3><p>Try loosening filters, or switch to <b>Show all</b> to include marketplace sellers.</p>`
+        : `<h3>No matches with these filters</h3><p>Try loosening the price, rating or brand filters.</p>`);
       return;
     }
 
@@ -232,6 +270,12 @@ if (typeof document !== "undefined") {
   function scoreColor(s) { return s >= 70 ? "#5ee39a" : s >= 50 ? "var(--accent)" : s >= 35 ? "#ffd166" : "#e2e2dc"; }
   const isSaved = (it) => saved.some((s) => s.id === it.id && s.store === it.store);
 
+  const TRUST_ICON = { official: "✓", authorized: "✓", resale: "✓", unverified: "!" };
+  function trustBadge(it) {
+    if (!it.trust) return "";
+    return `<span class="trust trust-${it.trust.tier}" title="${it.trust.tier === "unverified" ? "We can't confirm this seller sells authentic items" : "Seller sources from the brand or authenticates items"}">${TRUST_ICON[it.trust.tier] || ""} ${esc(it.trust.label)}</span>`;
+  }
+
   function cardHTML(it) {
     return `<article class="card">
       <div class="img">
@@ -242,6 +286,7 @@ if (typeof document !== "undefined") {
       </div>
       <div class="body">
         <div class="store">${esc(it.store)}</div>
+        ${trustBadge(it)}
         <h3 title="${esc(it.title)}">${esc(it.title)}</h3>
         ${it.rating != null ? `<div class="rating"><span class="stars">${stars(it.rating)}</span>${it.rating.toFixed(1)}<span class="count">(${(it.reviews || 0).toLocaleString()})</span></div>` : `<div class="rating"><span class="count">No reviews yet</span></div>`}
         <div class="price"><span class="now">${money(it.price)}</span>${it.oldPrice ? `<s>${money(it.oldPrice)}</s>` : ""}</div>
@@ -264,6 +309,7 @@ if (typeof document !== "undefined") {
       <div>
         <span class="label">⚡ Top pick</span>
         <div class="store" style="margin-top:8px">${esc(it.store)}</div>
+        <div style="margin-top:6px">${trustBadge(it)}</div>
         <h3>${esc(it.title)}</h3>
         <div class="price"><span class="now">${money(it.price)}</span>${it.oldPrice ? `<s>${money(it.oldPrice)}</s>` : ""}</div>
         <ul class="why">${why.map((w) => `<li>${esc(w)}</li>`).join("")}</ul>
@@ -301,6 +347,7 @@ if (typeof document !== "undefined") {
 
   function renderActive() {
     const chips = [];
+    if (!state.authenticOnly) chips.push(["auth", "Showing all sellers"]);
     if (state.min != null) chips.push(["min", `Min ${money(state.min)}`]);
     if (state.max != null) chips.push(["max", `Under ${money(state.max)}`]);
     if (state.minRating) chips.push(["rating", `${state.minRating}★+`]);
@@ -319,6 +366,8 @@ if (typeof document !== "undefined") {
     $("#saleOnly").checked = state.saleOnly;
     $("#ratedOnly").checked = state.ratedOnly;
     $("#freeShip").checked = state.freeShip;
+    document.querySelectorAll("#authSeg button").forEach((b) => b.classList.toggle("on", (b.dataset.v === "1") === state.authenticOnly));
+    store.set("snag_auth", state.authenticOnly);
     document.querySelectorAll("#ratingSeg button").forEach((b) => b.classList.toggle("on", +b.dataset.v === state.minRating));
     buildBrandChips();
     buildStoreList();
@@ -377,6 +426,12 @@ if (typeof document !== "undefined") {
     state.minRating = +e.target.dataset.v;
     syncControls(); render();
   });
+  $("#authSeg").addEventListener("click", (e) => {
+    const v = e.target.closest("button")?.dataset.v;
+    if (v == null) return;
+    state.authenticOnly = v === "1";
+    syncControls(); render();
+  });
   $("#saleOnly").addEventListener("change", (e) => { state.saleOnly = e.target.checked; render(); });
   $("#ratedOnly").addEventListener("change", (e) => { state.ratedOnly = e.target.checked; render(); });
   $("#freeShip").addEventListener("change", (e) => { state.freeShip = e.target.checked; render(); });
@@ -408,7 +463,8 @@ if (typeof document !== "undefined") {
     const k = e.target.dataset.clear;
     if (!k) return;
     if (k === "min" || k === "max") { state[k] = null; syncControls(); runSearch(state.query, { keepFilters: true }); return; }
-    if (k === "rating") state.minRating = 0;
+    if (k === "auth") state.authenticOnly = true;
+    else if (k === "rating") state.minRating = 0;
     else if (k === "sale") state.saleOnly = false;
     else if (k === "rated") state.ratedOnly = false;
     else if (k === "ship") state.freeShip = false;
@@ -417,7 +473,7 @@ if (typeof document !== "undefined") {
     syncControls(); render();
   });
   $("#resetFilters").addEventListener("click", () => {
-    Object.assign(state, { minRating: 0, saleOnly: false, ratedOnly: false, freeShip: false, sort: "score" });
+    Object.assign(state, { authenticOnly: true, minRating: 0, saleOnly: false, ratedOnly: false, freeShip: false, sort: "score" });
     state.brands.clear(); state.stores.clear();
     const hadPrice = state.min != null || state.max != null;
     state.min = state.max = null;
@@ -447,6 +503,8 @@ if (typeof document !== "undefined") {
   });
 
   // Init
+  state.authenticOnly = store.get("snag_auth", true) !== false;
+  syncControls();
   els.savedCount.textContent = saved.length;
   renderRecent();
   buildBrandChips();
@@ -454,4 +512,4 @@ if (typeof document !== "undefined") {
   if (urlQ) { els.q.value = urlQ; runSearch(urlQ); }
 }
 
-if (typeof module !== "undefined") module.exports = { parsePrompt, scoreItems, detectBrand };
+if (typeof module !== "undefined") module.exports = { parsePrompt, scoreItems, detectBrand, trustOf };
